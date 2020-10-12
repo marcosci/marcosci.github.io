@@ -1,5 +1,9 @@
 ### Hi there 👋
 
+[![Years Badge](https://badges.pufler.dev/years/marcosci)](https://badges.pufler.dev)
+
+
+
 <!--
 **marcosci/marcosci** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
 
