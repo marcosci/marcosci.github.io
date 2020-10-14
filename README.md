@@ -7,7 +7,7 @@
 </div>
 
 <br>
-I am computational landscape ecologist by training and now working as a data analyst and software developer for [indblik.io](indblik.io).
+I am computational landscape ecologist by training and now working as a data analyst and software developer for [indblik.io](https://www.indblik.io).
 
 <br>
 <br>
@@ -21,6 +21,6 @@ I am computational landscape ecologist by training and now working as a data ana
 
 If you like what I am doing:
 
- <a href="https://www.buymeacoffee.com/marcosci" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 10% !important;width: 20% !important;" ></a>
+ <a href="https://www.buymeacoffee.com/marcosci" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height = "100" ></a>
 
 <img src="https://komarev.com/ghpvc/?username=marcosci" alt="https://github.com/marcosci" />
