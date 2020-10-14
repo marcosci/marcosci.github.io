@@ -1,7 +1,7 @@
 
-<img height="200" align="left" src="https://raw.githubusercontent.com/marcosci/marcosci/main/joy_lines.svg">
+<img height="200" style="max-width:20%" align="left" src="https://raw.githubusercontent.com/marcosci/marcosci/main/joy_lines.svg">
 
-<img height="150" align="right" src="https://raw.githubusercontent.com/marcosci/marcosci/main/header.gif">
+<img height="150" style="max-width:60%" align="right" src="https://raw.githubusercontent.com/marcosci/marcosci/main/header.gif">
 
 <br>
 <br>
