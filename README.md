@@ -19,8 +19,9 @@ I am computational landscape ecologist by training and now working as a data ana
 <br>
 
 
+
+<div align="center">
 If you like what I am doing:
 
  <a href="https://www.buymeacoffee.com/marcosci" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height = "100" ></a>
-
-<img src="https://komarev.com/ghpvc/?username=marcosci" alt="https://github.com/marcosci" />
+</div>
