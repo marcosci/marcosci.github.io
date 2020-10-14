@@ -1,7 +1,12 @@
+<div id="banner" style="overflow: hidden;justify-content:space-around;">
+<div class="" style="max-width: 20%;max-height: 20%;display: inline-block;">
+        <img height="200" src="https://raw.githubusercontent.com/marcosci/marcosci/main/joy_lines.svg">
+</div>
 
-<img height="200" style="max-width:20%" align="left" src="https://raw.githubusercontent.com/marcosci/marcosci/main/joy_lines.svg">
-
-<img height="150" style="max-width:60%" align="right" src="https://raw.githubusercontent.com/marcosci/marcosci/main/header.gif">
+<div class="" style="max-width: 100%;max-height: 100%;display: inline-block;">
+        <img height="100" src="https://raw.githubusercontent.com/marcosci/marcosci/main/header.gif">
+</div>
+</div>
 
 <br>
 <br>
