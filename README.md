@@ -1,20 +1,10 @@
-### Hi there 👋
+<h1 style="font-weight:normal" align="center">
+  &nbsp;Hi there! :wave:&nbsp;
+</h1>
 
-[![Years Badge](https://badges.pufler.dev/years/marcosci)](https://badges.pufler.dev)
 
+<div align="center">
+&nbsp;&nbsp;&nbsp; <a href="https://twitter.com/shinysci" target="_blank"><img height="30" src="https://raw.githubusercontent.com/AbhishekMaira10/AbhishekMaira10/master/Resources/png/twitter.png?raw=true"></a> 
+</div>
 
-
-<!--
-**marcosci/marcosci** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
-
-Here are some ideas to get you started:
-
-- 🔭 I’m currently working on ...
-- 🌱 I’m currently learning ...
-- 👯 I’m looking to collaborate on ...
-- 🤔 I’m looking for help with ...
-- 💬 Ask me about ...
-- 📫 How to reach me: ...
-- 😄 Pronouns: ...
-- ⚡ Fun fact: ...
--->
+<img src="https://komarev.com/ghpvc/?username=marcosci" alt="https://github.com/marcosci" />
