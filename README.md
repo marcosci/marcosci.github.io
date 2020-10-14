@@ -1,6 +1,5 @@
 
-<center><img src = "https://raw.githubusercontent.com/marcosci/marcosci/main/joy_lines.svg" height = "200">
-<img src = "https://raw.githubusercontent.com/marcosci/marcosci/main/header.gif" height = "100"></center>
+<center><img src = "https://raw.githubusercontent.com/marcosci/marcosci/main/header.gif"></center>
 
 <br>
 <br>
