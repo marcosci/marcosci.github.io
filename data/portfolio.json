@@ -1,9 +1,0 @@
-{
-  "list": [
-    {
-      "name": "NLMR",
-      "url": "https://github.com/indblik-io/covidlines",
-      "desc": "R 📦 package to simulate neutral landscape models 🏔"
-    }
-  ]
-}
