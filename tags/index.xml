@@ -2,58 +2,58 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Tags on Marco Sciaini</title>
-    <link>https://example.com/tags/</link>
+    <link>https://marcosci.github.io/tags/</link>
     <description>Recent content in Tags on Marco Sciaini</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Marco Sciaini</copyright>
     <lastBuildDate>Thu, 05 Nov 2020 09:00:00 +0000</lastBuildDate>
     
-	<atom:link href="https://example.com/tags/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="https://marcosci.github.io/tags/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
       <title>Algorithms</title>
-      <link>https://example.com/tags/algorithms/</link>
+      <link>https://marcosci.github.io/tags/algorithms/</link>
       <pubDate>Thu, 05 Nov 2020 09:00:00 +0000</pubDate>
       
-      <guid>https://example.com/tags/algorithms/</guid>
+      <guid>https://marcosci.github.io/tags/algorithms/</guid>
       <description></description>
     </item>
     
     <item>
       <title>Maps</title>
-      <link>https://example.com/tags/maps/</link>
+      <link>https://marcosci.github.io/tags/maps/</link>
       <pubDate>Thu, 05 Nov 2020 09:00:00 +0000</pubDate>
       
-      <guid>https://example.com/tags/maps/</guid>
+      <guid>https://marcosci.github.io/tags/maps/</guid>
       <description></description>
     </item>
     
     <item>
       <title>R</title>
-      <link>https://example.com/tags/r/</link>
+      <link>https://marcosci.github.io/tags/r/</link>
       <pubDate>Thu, 05 Nov 2020 09:00:00 +0000</pubDate>
       
-      <guid>https://example.com/tags/r/</guid>
+      <guid>https://marcosci.github.io/tags/r/</guid>
       <description></description>
     </item>
     
     <item>
       <title>dotfiles</title>
-      <link>https://example.com/tags/dotfiles/</link>
+      <link>https://marcosci.github.io/tags/dotfiles/</link>
       <pubDate>Sat, 06 Jun 2020 09:00:00 +0000</pubDate>
       
-      <guid>https://example.com/tags/dotfiles/</guid>
+      <guid>https://marcosci.github.io/tags/dotfiles/</guid>
       <description></description>
     </item>
     
     <item>
       <title>vscode</title>
-      <link>https://example.com/tags/vscode/</link>
+      <link>https://marcosci.github.io/tags/vscode/</link>
       <pubDate>Sat, 06 Jun 2020 09:00:00 +0000</pubDate>
       
-      <guid>https://example.com/tags/vscode/</guid>
+      <guid>https://marcosci.github.io/tags/vscode/</guid>
       <description></description>
     </item>
     
