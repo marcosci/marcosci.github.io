@@ -1581,3 +1581,8 @@ code {
 .highlight .line {
   height: 22px;
 }
+
+#typedheader { 
+  font-size: 5.6em; 
+  color: red;
+}

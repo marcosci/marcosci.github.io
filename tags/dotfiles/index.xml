@@ -14,13 +14,12 @@
     
     <item>
       <title>VS Code and R</title>
-      <link>https://marcosci.github.io/posts/2020-06-06-changes-in-java-string/</link>
+      <link>https://marcosci.github.io/posts/2020-11-06-rstudiovscode/</link>
       <pubDate>Sat, 06 Jun 2020 09:00:00 +0000</pubDate>
       
-      <guid>https://marcosci.github.io/posts/2020-06-06-changes-in-java-string/</guid>
-      <description>RStudio is (most likely, are there any numbers out there?) the most widespread IDE for R. However, getting more and more submerged into the R shiny world there was always a bit of a hassle toying around with R, HTML, CSS and Javascript.
-I was using VisualStudio Code for my blog and Jupyter notebooks and recently saw a tweet from Miles McBain
-Why would I use VSCode? Representations  https://gist.</description>
+      <guid>https://marcosci.github.io/posts/2020-11-06-rstudiovscode/</guid>
+      <description>RStudio RStudio1 is (most likely, are there any numbers out there?) the most widespread IDE for R. However, getting more and more submerged into the R shiny world there was always a bit of a hassle toying around with R, HTML, CSS and Javascript.
+I was using VisualStudio Code for my blog and Jupyter notebooks and recently saw a tweet from Miles McBain explaining how he integrated RStudio Addins in VSCode.</description>
     </item>
     
   </channel>
