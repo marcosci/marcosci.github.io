@@ -241,7 +241,7 @@ The data comes from the covid19germany package, which was developed in the conte
 
 <p>First, we will need a bunch of R packages - tidyverse for our data wrangling, covid19germany for the COVID-19 data, sf, stars, landscapetools and fasterize for our spatial data wrangling,  and gganimate and extrafont to enrich our vis magic!</p>
 
-<pre><code class="language-R">library(tidyverse)
+<pre><code class="language-r">library(tidyverse)
 library(covid19germany)
 library(sf)
 library(stars)
@@ -253,7 +253,7 @@ library(extrafont)
 
 <p>extrafont allows us to use our systemfonts, later I assume that you have the Google font Mono installed. Otherwise, ggplot will fall back to a default font.</p>
 
-<pre><code class="language-R">extrafont::loadfonts(quiet = TRUE)
+<pre><code class="language-r">extrafont::loadfonts(quiet = TRUE)
 </code></pre>
 
 <h3 id="turning-polygons-in-raster">Turning polygons in raster</h3>
@@ -263,7 +263,7 @@ To be able to plot our spatial density lines, we have to turn our polygons into 
 
 <p>Lastly, we coerce our freshly cleanded polygon for each date into raster and this raster immediately into a tibble with x , y, z and time as columns. We will use the x, y and z to draw our lines and the date for the animation.</p>
 
-<pre><code class="language-R"># load covid and spatial data ----
+<pre><code class="language-r"># load covid and spatial data ----
 cov_df &lt;- covid19germany::get_RKI_timeseries()
 
 con &lt;- url(&quot;https://biogeo.ucdavis.edu/data/gadm3.6/Rsf/gadm36_DEU_3_sf.rds&quot;)
@@ -318,13 +318,13 @@ spatial_data &lt;- map_dfr(na.omit(unique(germany_cov_clean$Date)), function(id_
 
 <p>There is something wrong with the data before the 08th of march apparently, two dates have the same numer of newly positve tested person &hellip; which causes a weird error from gganimate, so we start with this date.</p>
 
-<pre><code class="language-R">spatial_data_df &lt;- spatial_data %&gt;% 
+<pre><code class="language-r">spatial_data_df &lt;- spatial_data %&gt;% 
   filter(date &gt; as.Date(&quot;2020-03-08&quot;))
 </code></pre>
 
 <p>We will use the five German cities Berlin, Frankfurt, Munich, Hamburg and Dortmund as points in space to give some spatial grasp to our data. Hence, we filter our sf object for Germany and repeat our data prepping steps. Lastly, we write it as a new column in our spatial_data_df object to use it later as a unique layer in our ggplot.</p>
 
-<pre><code class="language-R">aoi &lt;- c(&quot;Berlin&quot;, &quot;Frankfurt am Main&quot;, &quot;München&quot;, &quot;Hamburg&quot;, &quot;Dortmund&quot;)
+<pre><code class="language-r">aoi &lt;- c(&quot;Berlin&quot;, &quot;Frankfurt am Main&quot;, &quot;München&quot;, &quot;Hamburg&quot;, &quot;Dortmund&quot;)
 
 aoi_poly &lt;- germany_sf %&gt;% 
   filter(NAME_2 %in% aoi)
@@ -347,7 +347,7 @@ spatial_data_df$city &lt;- aoi_r$z
 
 <p>We then define the colors we are going to use for our arrows indicating the position of the fice cities we specified and define the geometry of these arrows.</p>
 
-<pre><code class="language-R">line_color = c('#fba298', &quot;#f84d39&quot;, &quot;#f84d39&quot;, &quot;#f84d39&quot;, &quot;#f84d39&quot;, &quot;#f84d39&quot;)
+<pre><code class="language-r">line_color = c('#fba298', &quot;#f84d39&quot;, &quot;#f84d39&quot;, &quot;#f84d39&quot;, &quot;#f84d39&quot;, &quot;#f84d39&quot;)
 
 arrow &lt;- tibble(x =    c(230, 245, 127, 130, 173, 185, 82, 50, 44,  25), 
                 xend = c(245, 260, 130, 133, 185, 229, 50, 29, 25,  14), 
@@ -359,7 +359,7 @@ arrow &lt;- tibble(x =    c(230, 245, 127, 130, 173, 185, 82, 50, 44,  25),
 
 <p>Turning this into a beautiful animation over time becomes now a breeze with gganimate &hellip;</p>
 
-<pre><code class="language-R">p1 &lt;- ggplot(spatial_data_df, aes(lng, lat + 6*(value/max(value, na.rm=TRUE)))) +
+<pre><code class="language-r">p1 &lt;- ggplot(spatial_data_df, aes(lng, lat + 6*(value/max(value, na.rm=TRUE)))) +
   geom_line(size = 0.35,
             alpha=0.6,
             aes(group = lat, color = factor(city)),
@@ -403,7 +403,7 @@ anim_save(&quot;covidlines.gif&quot;)
 
 <p>If we want to have look at specific dates, this becomes just the same chunk as above without the gganimate functions:</p>
 
-<pre><code class="language-R"># plot a single day ----
+<pre><code class="language-r"># plot a single day ----
 id_date = &quot;2020-10-05&quot;
 
 spatial_data_df %&gt;% 
@@ -440,7 +440,7 @@ ggsave(&quot;covidlines.png&quot;, width = 6.58, height = 8.58)
 
 <p>If you have any feedback on code/visualisition - get in touch, would love to chat about it. Otherwise, here is the full code to get to the animation or static plot:</p>
 
-<pre><code class="language-R">library(tidyverse)
+<pre><code class="language-r">library(tidyverse)
 library(sf)
 library(covid19germany)
 library(stars)
