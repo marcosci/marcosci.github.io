@@ -7,7 +7,7 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Marco Sciaini</copyright>
-    <lastBuildDate>Sat, 06 Jun 2020 09:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Mon, 30 Nov 2020 09:00:00 +0000</lastBuildDate>
     
 	<atom:link href="https://marcosci.github.io/tags/vscode/index.xml" rel="self" type="application/rss+xml" />
     
@@ -15,7 +15,7 @@
     <item>
       <title>VS Code and R</title>
       <link>https://marcosci.github.io/posts/2020-11-06-rstudiovscode/</link>
-      <pubDate>Sat, 06 Jun 2020 09:00:00 +0000</pubDate>
+      <pubDate>Mon, 30 Nov 2020 09:00:00 +0000</pubDate>
       
       <guid>https://marcosci.github.io/posts/2020-11-06-rstudiovscode/</guid>
       <description>RStudio RStudio1 is (most likely, are there any numbers out there?) the most widespread IDE for R. However, getting more and more submerged into the R shiny world there was always a bit of a hassle toying around with R, HTML, CSS and Javascript.
