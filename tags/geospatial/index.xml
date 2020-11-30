@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Posts on Marco Sciaini</title>
-    <link>https://marcosci.github.io/posts/</link>
-    <description>Recent content in Posts on Marco Sciaini</description>
+    <title>geospatial on Marco Sciaini</title>
+    <link>https://marcosci.github.io/tags/geospatial/</link>
+    <description>Recent content in geospatial on Marco Sciaini</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Marco Sciaini</copyright>
     <lastBuildDate>Mon, 30 Nov 2020 09:00:00 +0000</lastBuildDate>
     
-	<atom:link href="https://marcosci.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="https://marcosci.github.io/tags/geospatial/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
@@ -20,16 +20,6 @@
       <guid>https://marcosci.github.io/posts/2020-12-01-latitudinaldensity/</guid>
       <description>Background Inspired by James Cheshire&amp;rsquo;s Population Lines Print and Ryan Brideau, I wanted to track the spatial Pattern of the COVID-19 in Germany over time. This map shows the density of confirmed cases COVID-19 cases by latitude.
 The data comes from the covid19germany package, which was developed in the context of the #WirvsVirus hackathon. The package loads the data from the Bundesamt für Kartographie und Geodäsie as well as the Robert Koch Institut.</description>
-    </item>
-    
-    <item>
-      <title>VS Code and R</title>
-      <link>https://marcosci.github.io/posts/2020-11-06-rstudiovscode/</link>
-      <pubDate>Mon, 30 Nov 2020 09:00:00 +0000</pubDate>
-      
-      <guid>https://marcosci.github.io/posts/2020-11-06-rstudiovscode/</guid>
-      <description>RStudio RStudio1 is (most likely, are there any numbers out there?) the most widespread IDE for R. However, getting more and more submerged into the R shiny world there was always a bit of a hassle toying around with R, HTML, CSS and Javascript.
-I was using VisualStudio Code for my blog and Jupyter notebooks and recently saw a tweet from Miles McBain explaining how he integrated RStudio Addins in VSCode.</description>
     </item>
     
   </channel>
