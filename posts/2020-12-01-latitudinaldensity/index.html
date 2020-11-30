@@ -240,371 +240,344 @@ The data comes from the covid19germany package, which was developed in the conte
 <h3 id="setup">Setup</h3>
 
 <p>First, we will need a bunch of R packages - tidyverse for our data wrangling, covid19germany for the COVID-19 data, sf, stars, landscapetools and fasterize for our spatial data wrangling,  and gganimate and extrafont to enrich our vis magic!</p>
-
-<pre><code class="language-r">library(tidyverse)
-library(covid19germany)
-library(sf)
-library(stars)
-library(landscapetools)
-library(fasterize)
-library(gganimate)
-library(extrafont)
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#f92672">library</span>(tidyverse)
+<span style="color:#f92672">library</span>(covid19germany)
+<span style="color:#f92672">library</span>(sf)
+<span style="color:#f92672">library</span>(stars)
+<span style="color:#f92672">library</span>(landscapetools)
+<span style="color:#f92672">library</span>(fasterize)
+<span style="color:#f92672">library</span>(gganimate)
+<span style="color:#f92672">library</span>(extrafont)</code></pre></div>
 <p>extrafont allows us to use our systemfonts, later I assume that you have the Google font Mono installed. Otherwise, ggplot will fall back to a default font.</p>
-
-<pre><code class="language-r">extrafont::loadfonts(quiet = TRUE)
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">extrafont<span style="color:#f92672">::</span>loadfonts(quiet <span style="color:#f92672">=</span> <span style="color:#66d9ef">TRUE</span>)</code></pre></div>
 <h3 id="turning-polygons-in-raster">Turning polygons in raster</h3>
 
 <p>Then, we will load timeseries data for COVID-19 on NUTS-3 level for Germany and merge it with a GADM polygon to make it spatial.
 To be able to plot our spatial density lines, we have to turn our polygons into a raster. For this, we loop through each date in our dataset, make a complete dataset (fill zero cases which are NA in our data with a 0 - meaning zero cases, which is true for this type of data). We then standardize by area since some NUTS-3 regions are a lot bigger than others.</p>
 
 <p>Lastly, we coerce our freshly cleanded polygon for each date into raster and this raster immediately into a tibble with x , y, z and time as columns. We will use the x, y and z to draw our lines and the date for the animation.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#75715e"># load covid and spatial data ----</span>
+cov_df <span style="color:#f92672">&lt;-</span> covid19germany<span style="color:#f92672">::</span>get_RKI_timeseries()
 
-<pre><code class="language-r"># load covid and spatial data ----
-cov_df &lt;- covid19germany::get_RKI_timeseries()
+con <span style="color:#f92672">&lt;-</span> <span style="color:#66d9ef">url</span>(<span style="color:#e6db74">&#34;https://biogeo.ucdavis.edu/data/gadm3.6/Rsf/gadm36_DEU_3_sf.rds&#34;</span>)
+germany_sf <span style="color:#f92672">&lt;-</span> <span style="color:#66d9ef">readRDS</span>(con)
 
-con &lt;- url(&quot;https://biogeo.ucdavis.edu/data/gadm3.6/Rsf/gadm36_DEU_3_sf.rds&quot;)
-germany_sf &lt;- readRDS(con)
+<span style="color:#75715e"># data cleaning ----</span>
+<span style="color:#75715e">## clean weird naming of county names in covid dataframe</span>
+cov_df<span style="color:#f92672">$</span>Landkreis <span style="color:#f92672">&lt;-</span> str_sub(cov_df<span style="color:#f92672">$</span>Landkreis, <span style="color:#ae81ff">4</span>) 
 
-# data cleaning ----
-## clean weird naming of county names in covid dataframe
-cov_df$Landkreis &lt;- str_sub(cov_df$Landkreis, 4) 
+<span style="color:#75715e">## make covid data spatial </span>
+germany_cov <span style="color:#f92672">&lt;-</span> left_join(germany_sf, cov_df, by <span style="color:#f92672">=</span> <span style="color:#66d9ef">c</span>(<span style="color:#e6db74">&#34;NAME_3&#34;</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Landkreis&#34;</span>))
 
-## make covid data spatial 
-germany_cov &lt;- left_join(germany_sf, cov_df, by = c(&quot;NAME_3&quot; = &quot;Landkreis&quot;))
+<span style="color:#75715e">## group by date and county and summarise number of new confirmed cases</span>
+germany_cov_clean <span style="color:#f92672">&lt;-</span> germany_cov <span style="color:#f92672">%&gt;%</span>
+  group_by(Date, NAME_3) <span style="color:#f92672">%&gt;%</span>
+  summarise(SUM <span style="color:#f92672">=</span> <span style="color:#66d9ef">sum</span>(NumberNewTestedIll))
 
-## group by date and county and summarise number of new confirmed cases
-germany_cov_clean &lt;- germany_cov %&gt;%
-  group_by(Date, NAME_3) %&gt;%
-  summarise(SUM = sum(NumberNewTestedIll))
-
-# data transformation ---
-spatial_data &lt;- map_dfr(na.omit(unique(germany_cov_clean$Date)), function(id_date){
+<span style="color:#75715e"># data transformation ---</span>
+spatial_data <span style="color:#f92672">&lt;-</span> map_dfr(na.omit(<span style="color:#66d9ef">unique</span>(germany_cov_clean<span style="color:#f92672">$</span>Date)), <span style="color:#66d9ef">function</span>(id_date){
   
-  # filter for specific date
-  cov_intermed &lt;- germany_cov_clean %&gt;% 
-    filter(Date == as.Date(id_date)) 
+  <span style="color:#75715e"># filter for specific date</span>
+  cov_intermed <span style="color:#f92672">&lt;-</span> germany_cov_clean <span style="color:#f92672">%&gt;%</span> 
+    filter(Date <span style="color:#f92672">==</span> <span style="color:#66d9ef">as.Date</span>(id_date)) 
   
-  # since we only have polygons where NewIll &gt; 0, we need to join the &quot;empty&quot; ones
-  cov_intermed &lt;- suppressWarnings(st_join(germany_sf, cov_intermed))
+  <span style="color:#75715e"># since we only have polygons where NewIll &gt; 0, we need to join the &#34;empty&#34; ones</span>
+  cov_intermed <span style="color:#f92672">&lt;-</span> <span style="color:#66d9ef">suppressWarnings</span>(st_join(germany_sf, cov_intermed))
   
-  # standardize by area
-  cov_intermed$SUM &lt;- (cov_intermed$SUM / st_area(cov_intermed))
+  <span style="color:#75715e"># standardize by area</span>
+  cov_intermed<span style="color:#f92672">$</span>SUM <span style="color:#f92672">&lt;-</span> (cov_intermed<span style="color:#f92672">$</span>SUM <span style="color:#f92672">/</span> st_area(cov_intermed))
   
-  # and since &quot;empty&quot; actually means 0, we are going to do this
-  cov_intermed$SUM &lt;- cov_intermed$SUM %&gt;% replace_na(0)
+  <span style="color:#75715e"># and since &#34;empty&#34; actually means 0, we are going to do this</span>
+  cov_intermed<span style="color:#f92672">$</span>SUM <span style="color:#f92672">&lt;-</span> cov_intermed<span style="color:#f92672">$</span>SUM <span style="color:#f92672">%&gt;%</span> replace_na(<span style="color:#ae81ff">0</span>)
   
-  # turn the polygons to a raster and coerce this raster to a tibble
-  cov_r &lt;- raster(cov_intermed, res = 0.03320453)
-  cov_intermed &lt;- fasterize(cov_intermed, cov_r, field = &quot;SUM&quot;, fun=&quot;sum&quot;) %&gt;% 
-    landscapetools::util_raster2tibble()
+  <span style="color:#75715e"># turn the polygons to a raster and coerce this raster to a tibble</span>
+  cov_r <span style="color:#f92672">&lt;-</span> raster(cov_intermed, res <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.03320453</span>)
+  cov_intermed <span style="color:#f92672">&lt;-</span> fasterize(cov_intermed, cov_r, field <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;SUM&#34;</span>, fun<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;sum&#34;</span>) <span style="color:#f92672">%&gt;%</span> 
+    landscapetools<span style="color:#f92672">::</span>util_raster2tibble()
   
-  # and get the naming right
-  cov_intermed &lt;- cov_intermed %&gt;%
-    rename(lng = x, lat =y, value = z) #%&gt;% 
+  <span style="color:#75715e"># and get the naming right</span>
+  cov_intermed <span style="color:#f92672">&lt;-</span> cov_intermed <span style="color:#f92672">%&gt;%</span>
+    rename(lng <span style="color:#f92672">=</span> x, lat <span style="color:#f92672">=</span>y, value <span style="color:#f92672">=</span> z) <span style="color:#75715e">#%&gt;% </span>
   
-  cov_intermed$date &lt;- as.Date(id_date)
+  cov_intermed<span style="color:#f92672">$</span>date <span style="color:#f92672">&lt;-</span> <span style="color:#66d9ef">as.Date</span>(id_date)
   cov_intermed
   
-})
-</code></pre>
-
+})</code></pre></div>
 <h3 id="visualize-it">Visualize it!</h3>
 
 <h4 id="data-cleaning">Data cleaning</h4>
 
 <p>There is something wrong with the data before the 08th of march apparently, two dates have the same numer of newly positve tested person &hellip; which causes a weird error from gganimate, so we start with this date.</p>
-
-<pre><code class="language-r">spatial_data_df &lt;- spatial_data %&gt;% 
-  filter(date &gt; as.Date(&quot;2020-03-08&quot;))
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">spatial_data_df <span style="color:#f92672">&lt;-</span> spatial_data <span style="color:#f92672">%&gt;%</span> 
+  filter(date <span style="color:#f92672">&gt;</span> <span style="color:#66d9ef">as.Date</span>(<span style="color:#e6db74">&#34;2020-03-08&#34;</span>))</code></pre></div>
 <p>We will use the five German cities Berlin, Frankfurt, Munich, Hamburg and Dortmund as points in space to give some spatial grasp to our data. Hence, we filter our sf object for Germany and repeat our data prepping steps. Lastly, we write it as a new column in our spatial_data_df object to use it later as a unique layer in our ggplot.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">aoi <span style="color:#f92672">&lt;-</span> <span style="color:#66d9ef">c</span>(<span style="color:#e6db74">&#34;Berlin&#34;</span>, <span style="color:#e6db74">&#34;Frankfurt am Main&#34;</span>, <span style="color:#e6db74">&#34;München&#34;</span>, <span style="color:#e6db74">&#34;Hamburg&#34;</span>, <span style="color:#e6db74">&#34;Dortmund&#34;</span>)
 
-<pre><code class="language-r">aoi &lt;- c(&quot;Berlin&quot;, &quot;Frankfurt am Main&quot;, &quot;München&quot;, &quot;Hamburg&quot;, &quot;Dortmund&quot;)
+aoi_poly <span style="color:#f92672">&lt;-</span> germany_sf <span style="color:#f92672">%&gt;%</span> 
+  filter(NAME_2 <span style="color:#f92672">%in%</span> aoi)
 
-aoi_poly &lt;- germany_sf %&gt;% 
-  filter(NAME_2 %in% aoi)
-
-aoi_poly$group_id &lt;- aoi_poly %&gt;% 
-  group_by(NAME_2) %&gt;% 
+aoi_poly<span style="color:#f92672">$</span>group_id <span style="color:#f92672">&lt;-</span> aoi_poly <span style="color:#f92672">%&gt;%</span> 
+  group_by(NAME_2) <span style="color:#f92672">%&gt;%</span> 
   group_indices()
 
-aoi_poly &lt;- st_join(germany_sf, aoi_poly)
-aoi_poly$group_id &lt;- aoi_poly$group_id %&gt;% replace_na(0)
+aoi_poly <span style="color:#f92672">&lt;-</span> st_join(germany_sf, aoi_poly)
+aoi_poly<span style="color:#f92672">$</span>group_id <span style="color:#f92672">&lt;-</span> aoi_poly<span style="color:#f92672">$</span>group_id <span style="color:#f92672">%&gt;%</span> replace_na(<span style="color:#ae81ff">0</span>)
 
-aoi_r &lt;- raster(aoi_poly, res = 0.03320453)
-aoi_r &lt;- fasterize(aoi_poly, aoi_r, field = &quot;group_id&quot;, fun = &quot;first&quot;) %&gt;% 
-  landscapetools::util_raster2tibble()
+aoi_r <span style="color:#f92672">&lt;-</span> raster(aoi_poly, res <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.03320453</span>)
+aoi_r <span style="color:#f92672">&lt;-</span> fasterize(aoi_poly, aoi_r, field <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;group_id&#34;</span>, fun <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;first&#34;</span>) <span style="color:#f92672">%&gt;%</span> 
+  landscapetools<span style="color:#f92672">::</span>util_raster2tibble()
 
-aoi_r &lt;- purrr::map_dfr(seq_len(length(unique(spatial_data_df$date))), ~aoi_r)
+aoi_r <span style="color:#f92672">&lt;-</span> purrr<span style="color:#f92672">::</span>map_dfr(<span style="color:#66d9ef">seq_len</span>(<span style="color:#66d9ef">length</span>(<span style="color:#66d9ef">unique</span>(spatial_data_df<span style="color:#f92672">$</span><span style="color:#66d9ef">date</span>))), <span style="color:#f92672">~</span>aoi_r)
 
-spatial_data_df$city &lt;- aoi_r$z
-</code></pre>
-
+spatial_data_df<span style="color:#f92672">$</span>city <span style="color:#f92672">&lt;-</span> aoi_r<span style="color:#f92672">$</span>z</code></pre></div>
 <p>We then define the colors we are going to use for our arrows indicating the position of the fice cities we specified and define the geometry of these arrows.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">line_color <span style="color:#f92672">=</span> <span style="color:#66d9ef">c</span>(<span style="color:#e6db74">&#39;#fba298&#39;</span>, <span style="color:#e6db74">&#34;#f84d39&#34;</span>, <span style="color:#e6db74">&#34;#f84d39&#34;</span>, <span style="color:#e6db74">&#34;#f84d39&#34;</span>, <span style="color:#e6db74">&#34;#f84d39&#34;</span>, <span style="color:#e6db74">&#34;#f84d39&#34;</span>)
 
-<pre><code class="language-r">line_color = c('#fba298', &quot;#f84d39&quot;, &quot;#f84d39&quot;, &quot;#f84d39&quot;, &quot;#f84d39&quot;, &quot;#f84d39&quot;)
-
-arrow &lt;- tibble(x =    c(230, 245, 127, 130, 173, 185, 82, 50, 44,  25), 
-                xend = c(245, 260, 130, 133, 185, 229, 50, 29, 25,  14), 
-                y =    c(160, 170, 192, 220, 30,  34,  84, 84, 127, 127), 
-                yend = c(170, 170, 220, 224, 34,  34,  84, 50, 127, 148))
-</code></pre>
-
+arrow <span style="color:#f92672">&lt;-</span> tibble(x <span style="color:#f92672">=</span>    <span style="color:#66d9ef">c</span>(<span style="color:#ae81ff">230</span>, <span style="color:#ae81ff">245</span>, <span style="color:#ae81ff">127</span>, <span style="color:#ae81ff">130</span>, <span style="color:#ae81ff">173</span>, <span style="color:#ae81ff">185</span>, <span style="color:#ae81ff">82</span>, <span style="color:#ae81ff">50</span>, <span style="color:#ae81ff">44</span>,  <span style="color:#ae81ff">25</span>), 
+                xend <span style="color:#f92672">=</span> <span style="color:#66d9ef">c</span>(<span style="color:#ae81ff">245</span>, <span style="color:#ae81ff">260</span>, <span style="color:#ae81ff">130</span>, <span style="color:#ae81ff">133</span>, <span style="color:#ae81ff">185</span>, <span style="color:#ae81ff">229</span>, <span style="color:#ae81ff">50</span>, <span style="color:#ae81ff">29</span>, <span style="color:#ae81ff">25</span>,  <span style="color:#ae81ff">14</span>), 
+                y <span style="color:#f92672">=</span>    <span style="color:#66d9ef">c</span>(<span style="color:#ae81ff">160</span>, <span style="color:#ae81ff">170</span>, <span style="color:#ae81ff">192</span>, <span style="color:#ae81ff">220</span>, <span style="color:#ae81ff">30</span>,  <span style="color:#ae81ff">34</span>,  <span style="color:#ae81ff">84</span>, <span style="color:#ae81ff">84</span>, <span style="color:#ae81ff">127</span>, <span style="color:#ae81ff">127</span>), 
+                yend <span style="color:#f92672">=</span> <span style="color:#66d9ef">c</span>(<span style="color:#ae81ff">170</span>, <span style="color:#ae81ff">170</span>, <span style="color:#ae81ff">220</span>, <span style="color:#ae81ff">224</span>, <span style="color:#ae81ff">34</span>,  <span style="color:#ae81ff">34</span>,  <span style="color:#ae81ff">84</span>, <span style="color:#ae81ff">50</span>, <span style="color:#ae81ff">127</span>, <span style="color:#ae81ff">148</span>))</code></pre></div>
 <h4 id="gganimate">gganimate</h4>
 
 <p>Turning this into a beautiful animation over time becomes now a breeze with gganimate &hellip;</p>
-
-<pre><code class="language-r">p1 &lt;- ggplot(spatial_data_df, aes(lng, lat + 6*(value/max(value, na.rm=TRUE)))) +
-  geom_line(size = 0.35,
-            alpha=0.6,
-            aes(group = lat, color = factor(city)),
-            na.rm=TRUE) +
-  ggthemes::theme_map(base_family = &quot;Overpass Mono&quot;) +
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r">p1 <span style="color:#f92672">&lt;-</span> ggplot(spatial_data_df, aes(lng, lat <span style="color:#f92672">+</span> <span style="color:#ae81ff">6</span><span style="color:#f92672">*</span>(value<span style="color:#f92672">/</span><span style="color:#66d9ef">max</span>(value, na.rm<span style="color:#f92672">=</span><span style="color:#66d9ef">TRUE</span>)))) <span style="color:#f92672">+</span>
+  geom_line(size <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.35</span>,
+            alpha<span style="color:#f92672">=</span><span style="color:#ae81ff">0.6</span>,
+            aes(group <span style="color:#f92672">=</span> lat, color <span style="color:#f92672">=</span> <span style="color:#66d9ef">factor</span>(city)),
+            na.rm<span style="color:#f92672">=</span><span style="color:#66d9ef">TRUE</span>) <span style="color:#f92672">+</span>
+  ggthemes<span style="color:#f92672">::</span>theme_map(base_family <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Overpass Mono&#34;</span>) <span style="color:#f92672">+</span>
   labs(
-    title = 'Day: {frame_time}',
-    subtitle = &quot;Shown is the number of new confirmed COVID-19 cases for each day since March, 2020.&quot;,
-    caption = &quot;Visualization by Marco Sciaini • Data by RKI&quot;
-  ) +
-  transition_time(date) +
-  shadow_wake(wake_length = 0.1, colour = '#5A3E37')  +
-  theme(plot.background = element_rect(fill = &quot;#e6eaeb&quot;, &quot;#e6eaeb&quot;),
-        plot.title = element_text(size = 16), 
-        plot.subtitle = element_text(size = 12)) +
-  scale_color_manual(values = line_color, guide = &quot;none&quot;) +
-  geom_segment(data = arrow, 
-               aes(x = x, xend = xend, y = y, yend = yend),
-               size = 0.1,
-               alpha = 0.7) +
-  annotate(&quot;text&quot;, x = 270, y = 170, label = &quot;Berlin&quot;, size = 2.7, family = &quot;Overpass Mono&quot;) +
-  annotate(&quot;text&quot;, x = 240, y = 34, label = &quot;Munich&quot;, size = 2.7, family = &quot;Overpass Mono&quot;) +
-  annotate(&quot;text&quot;, x = 30, y = 48, label = &quot;Frankfurt&quot;, size = 2.7, family = &quot;Overpass Mono&quot;) +
-  annotate(&quot;text&quot;, x = 15, y = 150, label = &quot;Dortmund&quot;, size = 2.7, family = &quot;Overpass Mono&quot;) +
-  annotate(&quot;text&quot;, x = 144, y = 225, label = &quot;Hamburg&quot;, size = 2.7, family = &quot;Overpass Mono&quot;)
+    title <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;Day: {frame_time}&#39;</span>,
+    subtitle <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Shown is the number of new confirmed COVID-19 cases for each day since March, 2020.&#34;</span>,
+    caption <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Visualization by Marco Sciaini • Data by RKI&#34;</span>
+  ) <span style="color:#f92672">+</span>
+  transition_time(<span style="color:#66d9ef">date</span>) <span style="color:#f92672">+</span>
+  shadow_wake(wake_length <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.1</span>, colour <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;#5A3E37&#39;</span>)  <span style="color:#f92672">+</span>
+  theme(plot.background <span style="color:#f92672">=</span> element_rect(fill <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;#e6eaeb&#34;</span>, <span style="color:#e6db74">&#34;#e6eaeb&#34;</span>),
+        plot.title <span style="color:#f92672">=</span> element_text(size <span style="color:#f92672">=</span> <span style="color:#ae81ff">16</span>), 
+        plot.subtitle <span style="color:#f92672">=</span> element_text(size <span style="color:#f92672">=</span> <span style="color:#ae81ff">12</span>)) <span style="color:#f92672">+</span>
+  scale_color_manual(values <span style="color:#f92672">=</span> line_color, guide <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;none&#34;</span>) <span style="color:#f92672">+</span>
+  geom_segment(data <span style="color:#f92672">=</span> arrow, 
+               aes(x <span style="color:#f92672">=</span> x, xend <span style="color:#f92672">=</span> xend, y <span style="color:#f92672">=</span> y, yend <span style="color:#f92672">=</span> yend),
+               size <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.1</span>,
+               alpha <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.7</span>) <span style="color:#f92672">+</span>
+  annotate(<span style="color:#e6db74">&#34;text&#34;</span>, x <span style="color:#f92672">=</span> <span style="color:#ae81ff">270</span>, y <span style="color:#f92672">=</span> <span style="color:#ae81ff">170</span>, label <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Berlin&#34;</span>, size <span style="color:#f92672">=</span> <span style="color:#ae81ff">2.7</span>, family <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Overpass Mono&#34;</span>) <span style="color:#f92672">+</span>
+  annotate(<span style="color:#e6db74">&#34;text&#34;</span>, x <span style="color:#f92672">=</span> <span style="color:#ae81ff">240</span>, y <span style="color:#f92672">=</span> <span style="color:#ae81ff">34</span>, label <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Munich&#34;</span>, size <span style="color:#f92672">=</span> <span style="color:#ae81ff">2.7</span>, family <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Overpass Mono&#34;</span>) <span style="color:#f92672">+</span>
+  annotate(<span style="color:#e6db74">&#34;text&#34;</span>, x <span style="color:#f92672">=</span> <span style="color:#ae81ff">30</span>, y <span style="color:#f92672">=</span> <span style="color:#ae81ff">48</span>, label <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Frankfurt&#34;</span>, size <span style="color:#f92672">=</span> <span style="color:#ae81ff">2.7</span>, family <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Overpass Mono&#34;</span>) <span style="color:#f92672">+</span>
+  annotate(<span style="color:#e6db74">&#34;text&#34;</span>, x <span style="color:#f92672">=</span> <span style="color:#ae81ff">15</span>, y <span style="color:#f92672">=</span> <span style="color:#ae81ff">150</span>, label <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Dortmund&#34;</span>, size <span style="color:#f92672">=</span> <span style="color:#ae81ff">2.7</span>, family <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Overpass Mono&#34;</span>) <span style="color:#f92672">+</span>
+  annotate(<span style="color:#e6db74">&#34;text&#34;</span>, x <span style="color:#f92672">=</span> <span style="color:#ae81ff">144</span>, y <span style="color:#f92672">=</span> <span style="color:#ae81ff">225</span>, label <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Hamburg&#34;</span>, size <span style="color:#f92672">=</span> <span style="color:#ae81ff">2.7</span>, family <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Overpass Mono&#34;</span>)
 
-gganimate::animate(p1,
-                   render = gifski_renderer(),
-                   nframes = length(unique(spatial_data_df$date)),
-                   width= 3458,
-                   height= 3858,
-                   duration = 15,
-                   res = 300)
+gganimate<span style="color:#f92672">::</span>animate(p1,
+                   render <span style="color:#f92672">=</span> gifski_renderer(),
+                   nframes <span style="color:#f92672">=</span> <span style="color:#66d9ef">length</span>(<span style="color:#66d9ef">unique</span>(spatial_data_df<span style="color:#f92672">$</span><span style="color:#66d9ef">date</span>)),
+                   width<span style="color:#f92672">=</span> <span style="color:#ae81ff">3458</span>,
+                   height<span style="color:#f92672">=</span> <span style="color:#ae81ff">3858</span>,
+                   duration <span style="color:#f92672">=</span> <span style="color:#ae81ff">15</span>,
+                   res <span style="color:#f92672">=</span> <span style="color:#ae81ff">300</span>)
 
-anim_save(&quot;covidlines.gif&quot;)
-</code></pre>
-
+anim_save(<span style="color:#e6db74">&#34;covidlines.gif&#34;</span>)</code></pre></div>
 <p>Caveat: This becomes a memory monster &hellip; in late November, this was 43 gb in memory.</p>
 
 <h4 id="ggplot">ggplot</h4>
 
 <p>If we want to have look at specific dates, this becomes just the same chunk as above without the gganimate functions:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#75715e"># plot a single day ----</span>
+id_date <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;2020-10-05&#34;</span>
 
-<pre><code class="language-r"># plot a single day ----
-id_date = &quot;2020-10-05&quot;
-
-spatial_data_df %&gt;% 
-  filter(date == as.Date(id_date)) %&gt;% 
-  ggplot(aes(lng, lat + 25*(value/max(value, na.rm = TRUE)))) +
-  geom_line(size = 0.35,
-            alpha=0.6,
-            aes(group = lat, color = factor(city)),
-            na.rm=TRUE) +
-  ggthemes::theme_map(base_family = &quot;Overpass Mono&quot;) +
+spatial_data_df <span style="color:#f92672">%&gt;%</span> 
+  filter(date <span style="color:#f92672">==</span> <span style="color:#66d9ef">as.Date</span>(id_date)) <span style="color:#f92672">%&gt;%</span> 
+  ggplot(aes(lng, lat <span style="color:#f92672">+</span> <span style="color:#ae81ff">25</span><span style="color:#f92672">*</span>(value<span style="color:#f92672">/</span><span style="color:#66d9ef">max</span>(value, na.rm <span style="color:#f92672">=</span> <span style="color:#66d9ef">TRUE</span>)))) <span style="color:#f92672">+</span>
+  geom_line(size <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.35</span>,
+            alpha<span style="color:#f92672">=</span><span style="color:#ae81ff">0.6</span>,
+            aes(group <span style="color:#f92672">=</span> lat, color <span style="color:#f92672">=</span> <span style="color:#66d9ef">factor</span>(city)),
+            na.rm<span style="color:#f92672">=</span><span style="color:#66d9ef">TRUE</span>) <span style="color:#f92672">+</span>
+  ggthemes<span style="color:#f92672">::</span>theme_map(base_family <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Overpass Mono&#34;</span>) <span style="color:#f92672">+</span>
   labs(
-    title = paste(&quot;Day:&quot;, id_date), 
-    subtitle = &quot;Shown is the number of new confirmed COVID-19 as latitudinal density.&quot;,
-    caption = &quot;Visualization by Marco Sciaini • Data by RKI&quot;
-  ) +
-  theme(plot.background = element_rect(fill = &quot;#e6eaeb&quot;, &quot;#e6eaeb&quot;)) +
-  scale_color_manual(values = line_color, guide = &quot;none&quot;) +
-  geom_segment(data = arrow, 
-               aes(x = x, xend = xend, y = y, yend = yend),
-               size = 0.1,
-               alpha = 0.7) +
-  annotate(&quot;text&quot;, x = 270, y = 170, label = &quot;Berlin&quot;, size = 2.7, family = &quot;Overpass Mono&quot;) +
-  annotate(&quot;text&quot;, x = 240, y = 34, label = &quot;Munich&quot;, size = 2.7, family = &quot;Overpass Mono&quot;) +
-  annotate(&quot;text&quot;, x = 30, y = 48, label = &quot;Frankfurt&quot;, size = 2.7, family = &quot;Overpass Mono&quot;) +
-  annotate(&quot;text&quot;, x = 15, y = 150, label = &quot;Dortmund&quot;, size = 2.7, family = &quot;Overpass Mono&quot;) +
-  annotate(&quot;text&quot;, x = 144, y = 225, label = &quot;Hamburg&quot;, size = 2.7, family = &quot;Overpass Mono&quot;)
+    title <span style="color:#f92672">=</span> <span style="color:#66d9ef">paste</span>(<span style="color:#e6db74">&#34;Day:&#34;</span>, id_date), 
+    subtitle <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Shown is the number of new confirmed COVID-19 as latitudinal density.&#34;</span>,
+    caption <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Visualization by Marco Sciaini • Data by RKI&#34;</span>
+  ) <span style="color:#f92672">+</span>
+  theme(plot.background <span style="color:#f92672">=</span> element_rect(fill <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;#e6eaeb&#34;</span>, <span style="color:#e6db74">&#34;#e6eaeb&#34;</span>)) <span style="color:#f92672">+</span>
+  scale_color_manual(values <span style="color:#f92672">=</span> line_color, guide <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;none&#34;</span>) <span style="color:#f92672">+</span>
+  geom_segment(data <span style="color:#f92672">=</span> arrow, 
+               aes(x <span style="color:#f92672">=</span> x, xend <span style="color:#f92672">=</span> xend, y <span style="color:#f92672">=</span> y, yend <span style="color:#f92672">=</span> yend),
+               size <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.1</span>,
+               alpha <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.7</span>) <span style="color:#f92672">+</span>
+  annotate(<span style="color:#e6db74">&#34;text&#34;</span>, x <span style="color:#f92672">=</span> <span style="color:#ae81ff">270</span>, y <span style="color:#f92672">=</span> <span style="color:#ae81ff">170</span>, label <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Berlin&#34;</span>, size <span style="color:#f92672">=</span> <span style="color:#ae81ff">2.7</span>, family <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Overpass Mono&#34;</span>) <span style="color:#f92672">+</span>
+  annotate(<span style="color:#e6db74">&#34;text&#34;</span>, x <span style="color:#f92672">=</span> <span style="color:#ae81ff">240</span>, y <span style="color:#f92672">=</span> <span style="color:#ae81ff">34</span>, label <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Munich&#34;</span>, size <span style="color:#f92672">=</span> <span style="color:#ae81ff">2.7</span>, family <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Overpass Mono&#34;</span>) <span style="color:#f92672">+</span>
+  annotate(<span style="color:#e6db74">&#34;text&#34;</span>, x <span style="color:#f92672">=</span> <span style="color:#ae81ff">30</span>, y <span style="color:#f92672">=</span> <span style="color:#ae81ff">48</span>, label <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Frankfurt&#34;</span>, size <span style="color:#f92672">=</span> <span style="color:#ae81ff">2.7</span>, family <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Overpass Mono&#34;</span>) <span style="color:#f92672">+</span>
+  annotate(<span style="color:#e6db74">&#34;text&#34;</span>, x <span style="color:#f92672">=</span> <span style="color:#ae81ff">15</span>, y <span style="color:#f92672">=</span> <span style="color:#ae81ff">150</span>, label <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Dortmund&#34;</span>, size <span style="color:#f92672">=</span> <span style="color:#ae81ff">2.7</span>, family <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Overpass Mono&#34;</span>) <span style="color:#f92672">+</span>
+  annotate(<span style="color:#e6db74">&#34;text&#34;</span>, x <span style="color:#f92672">=</span> <span style="color:#ae81ff">144</span>, y <span style="color:#f92672">=</span> <span style="color:#ae81ff">225</span>, label <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Hamburg&#34;</span>, size <span style="color:#f92672">=</span> <span style="color:#ae81ff">2.7</span>, family <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Overpass Mono&#34;</span>)
 
-ggsave(&quot;covidlines.png&quot;, width = 6.58, height = 8.58)
-</code></pre>
-
+ggsave(<span style="color:#e6db74">&#34;covidlines.png&#34;</span>, width <span style="color:#f92672">=</span> <span style="color:#ae81ff">6.58</span>, height <span style="color:#f92672">=</span> <span style="color:#ae81ff">8.58</span>)</code></pre></div>
 <h2 id="summary">Summary</h2>
 
 <p>Turning COVID-19 timeseries data into a spatial animation with a strong hinche of Joy Division solely relying on R Stats tools? No problem &hellip; It is just awesome that there is an R package for everything!</p>
 
 <p>If you have any feedback on code/visualisition - get in touch, would love to chat about it. Otherwise, here is the full code to get to the animation or static plot:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-r" data-lang="r"><span style="color:#f92672">library</span>(tidyverse)
+<span style="color:#f92672">library</span>(sf)
+<span style="color:#f92672">library</span>(covid19germany)
+<span style="color:#f92672">library</span>(stars)
+<span style="color:#f92672">library</span>(gganimate)
+<span style="color:#f92672">library</span>(fasterize)
+<span style="color:#f92672">library</span>(extrafont)
+<span style="color:#f92672">library</span>(landscapetools)
 
-<pre><code class="language-r">library(tidyverse)
-library(sf)
-library(covid19germany)
-library(stars)
-library(gganimate)
-library(fasterize)
-library(extrafont)
-library(landscapetools)
+<span style="color:#75715e"># load font ----</span>
+extrafont<span style="color:#f92672">::</span>loadfonts(quiet <span style="color:#f92672">=</span> <span style="color:#66d9ef">TRUE</span>)
 
-# load font ----
-extrafont::loadfonts(quiet = TRUE)
+<span style="color:#75715e"># load covid and spatial data ----</span>
+cov_df <span style="color:#f92672">&lt;-</span> covid19germany<span style="color:#f92672">::</span>get_RKI_timeseries()
 
-# load covid and spatial data ----
-cov_df &lt;- covid19germany::get_RKI_timeseries()
+con <span style="color:#f92672">&lt;-</span> <span style="color:#66d9ef">url</span>(<span style="color:#e6db74">&#34;https://biogeo.ucdavis.edu/data/gadm3.6/Rsf/gadm36_DEU_3_sf.rds&#34;</span>)
+germany_sf <span style="color:#f92672">&lt;-</span> <span style="color:#66d9ef">readRDS</span>(con)
 
-con &lt;- url(&quot;https://biogeo.ucdavis.edu/data/gadm3.6/Rsf/gadm36_DEU_3_sf.rds&quot;)
-germany_sf &lt;- readRDS(con)
+<span style="color:#75715e"># data cleaning ----</span>
+<span style="color:#75715e">## clean weird naming of county names in covid dataframe</span>
+cov_df<span style="color:#f92672">$</span>Landkreis <span style="color:#f92672">&lt;-</span> str_sub(cov_df<span style="color:#f92672">$</span>Landkreis, <span style="color:#ae81ff">4</span>) 
 
-# data cleaning ----
-## clean weird naming of county names in covid dataframe
-cov_df$Landkreis &lt;- str_sub(cov_df$Landkreis, 4) 
+<span style="color:#75715e">## make covid data spatial </span>
+germany_cov <span style="color:#f92672">&lt;-</span> left_join(germany_sf, cov_df, by <span style="color:#f92672">=</span> <span style="color:#66d9ef">c</span>(<span style="color:#e6db74">&#34;NAME_3&#34;</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Landkreis&#34;</span>))
 
-## make covid data spatial 
-germany_cov &lt;- left_join(germany_sf, cov_df, by = c(&quot;NAME_3&quot; = &quot;Landkreis&quot;))
+<span style="color:#75715e">## group by date and county and summarise number of new confirmed cases</span>
+germany_cov_clean <span style="color:#f92672">&lt;-</span> germany_cov <span style="color:#f92672">%&gt;%</span>
+  group_by(Date, NAME_3) <span style="color:#f92672">%&gt;%</span>
+  summarise(SUM <span style="color:#f92672">=</span> <span style="color:#66d9ef">sum</span>(NumberNewTestedIll))
 
-## group by date and county and summarise number of new confirmed cases
-germany_cov_clean &lt;- germany_cov %&gt;%
-  group_by(Date, NAME_3) %&gt;%
-  summarise(SUM = sum(NumberNewTestedIll))
-
-# data transformation ---
-spatial_data &lt;- map_dfr(na.omit(unique(germany_cov_clean$Date)), function(id_date){
+<span style="color:#75715e"># data transformation ---</span>
+spatial_data <span style="color:#f92672">&lt;-</span> map_dfr(na.omit(<span style="color:#66d9ef">unique</span>(germany_cov_clean<span style="color:#f92672">$</span>Date)), <span style="color:#66d9ef">function</span>(id_date){
   
-  # filter for specific date
-  cov_intermed &lt;- germany_cov_clean %&gt;% 
-    filter(Date == as.Date(id_date)) 
+  <span style="color:#75715e"># filter for specific date</span>
+  cov_intermed <span style="color:#f92672">&lt;-</span> germany_cov_clean <span style="color:#f92672">%&gt;%</span> 
+    filter(Date <span style="color:#f92672">==</span> <span style="color:#66d9ef">as.Date</span>(id_date)) 
   
-  # since we only have polygons where NewIll &gt; 0, we need to join the &quot;empty&quot; ones
-  cov_intermed &lt;- suppressWarnings(st_join(germany_sf, cov_intermed))
+  <span style="color:#75715e"># since we only have polygons where NewIll &gt; 0, we need to join the &#34;empty&#34; ones</span>
+  cov_intermed <span style="color:#f92672">&lt;-</span> <span style="color:#66d9ef">suppressWarnings</span>(st_join(germany_sf, cov_intermed))
   
-  # standardize by area
-  cov_intermed$SUM &lt;- (cov_intermed$SUM / st_area(cov_intermed))
+  <span style="color:#75715e"># standardize by area</span>
+  cov_intermed<span style="color:#f92672">$</span>SUM <span style="color:#f92672">&lt;-</span> (cov_intermed<span style="color:#f92672">$</span>SUM <span style="color:#f92672">/</span> st_area(cov_intermed))
   
-  # and since &quot;empty&quot; actually means 0, we are going to do this
-  cov_intermed$SUM &lt;- cov_intermed$SUM %&gt;% replace_na(0)
+  <span style="color:#75715e"># and since &#34;empty&#34; actually means 0, we are going to do this</span>
+  cov_intermed<span style="color:#f92672">$</span>SUM <span style="color:#f92672">&lt;-</span> cov_intermed<span style="color:#f92672">$</span>SUM <span style="color:#f92672">%&gt;%</span> replace_na(<span style="color:#ae81ff">0</span>)
   
-  # turn the polygons to a raster and coerce this raster to a tibble
-  cov_r &lt;- raster(cov_intermed, res = 0.03320453)
-  cov_intermed &lt;- fasterize(cov_intermed, cov_r, field = &quot;SUM&quot;, fun=&quot;sum&quot;) %&gt;% 
-    landscapetools::util_raster2tibble()
+  <span style="color:#75715e"># turn the polygons to a raster and coerce this raster to a tibble</span>
+  cov_r <span style="color:#f92672">&lt;-</span> raster(cov_intermed, res <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.03320453</span>)
+  cov_intermed <span style="color:#f92672">&lt;-</span> fasterize(cov_intermed, cov_r, field <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;SUM&#34;</span>, fun<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;sum&#34;</span>) <span style="color:#f92672">%&gt;%</span> 
+    landscapetools<span style="color:#f92672">::</span>util_raster2tibble()
   
-  # and get the naming right
-  cov_intermed &lt;- cov_intermed %&gt;%
-    rename(lng = x, lat =y, value = z) #%&gt;% 
+  <span style="color:#75715e"># and get the naming right</span>
+  cov_intermed <span style="color:#f92672">&lt;-</span> cov_intermed <span style="color:#f92672">%&gt;%</span>
+    rename(lng <span style="color:#f92672">=</span> x, lat <span style="color:#f92672">=</span>y, value <span style="color:#f92672">=</span> z) <span style="color:#75715e">#%&gt;% </span>
   
-  cov_intermed$date &lt;- as.Date(id_date)
+  cov_intermed<span style="color:#f92672">$</span>date <span style="color:#f92672">&lt;-</span> <span style="color:#66d9ef">as.Date</span>(id_date)
   cov_intermed
   
 })
 
-# animate as gif ----
-## there is something wrong with the data before the 08th of march
-## apparently, two dates have the same numer of newly positve tested person
-## ... which causes a weird error from gganimate, so we start with this date
-spatial_data_df &lt;- spatial_data %&gt;% 
-  filter(date &gt; as.Date(&quot;2020-03-08&quot;))
+<span style="color:#75715e"># animate as gif ----</span>
+<span style="color:#75715e">## there is something wrong with the data before the 08th of march</span>
+<span style="color:#75715e">## apparently, two dates have the same numer of newly positve tested person</span>
+<span style="color:#75715e">## ... which causes a weird error from gganimate, so we start with this date</span>
+spatial_data_df <span style="color:#f92672">&lt;-</span> spatial_data <span style="color:#f92672">%&gt;%</span> 
+  filter(date <span style="color:#f92672">&gt;</span> <span style="color:#66d9ef">as.Date</span>(<span style="color:#e6db74">&#34;2020-03-08&#34;</span>))
 
 
-aoi &lt;- c(&quot;Berlin&quot;, &quot;Frankfurt am Main&quot;, &quot;München&quot;, &quot;Hamburg&quot;, &quot;Dortmund&quot;)
+aoi <span style="color:#f92672">&lt;-</span> <span style="color:#66d9ef">c</span>(<span style="color:#e6db74">&#34;Berlin&#34;</span>, <span style="color:#e6db74">&#34;Frankfurt am Main&#34;</span>, <span style="color:#e6db74">&#34;München&#34;</span>, <span style="color:#e6db74">&#34;Hamburg&#34;</span>, <span style="color:#e6db74">&#34;Dortmund&#34;</span>)
 
-aoi_poly &lt;- germany_sf %&gt;% 
-  filter(NAME_2 %in% aoi)
+aoi_poly <span style="color:#f92672">&lt;-</span> germany_sf <span style="color:#f92672">%&gt;%</span> 
+  filter(NAME_2 <span style="color:#f92672">%in%</span> aoi)
 
-aoi_poly$group_id &lt;- aoi_poly %&gt;% 
-  group_by(NAME_2) %&gt;% 
+aoi_poly<span style="color:#f92672">$</span>group_id <span style="color:#f92672">&lt;-</span> aoi_poly <span style="color:#f92672">%&gt;%</span> 
+  group_by(NAME_2) <span style="color:#f92672">%&gt;%</span> 
   group_indices()
 
-aoi_poly &lt;- st_join(germany_sf, aoi_poly)
-aoi_poly$group_id &lt;- aoi_poly$group_id %&gt;% replace_na(0)
+aoi_poly <span style="color:#f92672">&lt;-</span> st_join(germany_sf, aoi_poly)
+aoi_poly<span style="color:#f92672">$</span>group_id <span style="color:#f92672">&lt;-</span> aoi_poly<span style="color:#f92672">$</span>group_id <span style="color:#f92672">%&gt;%</span> replace_na(<span style="color:#ae81ff">0</span>)
 
-aoi_r &lt;- raster(aoi_poly, res = 0.03320453)
-aoi_r &lt;- fasterize(aoi_poly, aoi_r, field = &quot;group_id&quot;, fun = &quot;first&quot;) %&gt;% 
-  landscapetools::util_raster2tibble()
+aoi_r <span style="color:#f92672">&lt;-</span> raster(aoi_poly, res <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.03320453</span>)
+aoi_r <span style="color:#f92672">&lt;-</span> fasterize(aoi_poly, aoi_r, field <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;group_id&#34;</span>, fun <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;first&#34;</span>) <span style="color:#f92672">%&gt;%</span> 
+  landscapetools<span style="color:#f92672">::</span>util_raster2tibble()
 
-aoi_r &lt;- purrr::map_dfr(seq_len(length(unique(spatial_data_df$date))), ~aoi_r)
+aoi_r <span style="color:#f92672">&lt;-</span> purrr<span style="color:#f92672">::</span>map_dfr(<span style="color:#66d9ef">seq_len</span>(<span style="color:#66d9ef">length</span>(<span style="color:#66d9ef">unique</span>(spatial_data_df<span style="color:#f92672">$</span><span style="color:#66d9ef">date</span>))), <span style="color:#f92672">~</span>aoi_r)
 
-spatial_data_df$city &lt;- aoi_r$z
+spatial_data_df<span style="color:#f92672">$</span>city <span style="color:#f92672">&lt;-</span> aoi_r<span style="color:#f92672">$</span>z
 
 
-line_color = c('#fba298', &quot;#f84d39&quot;, &quot;#f84d39&quot;, &quot;#f84d39&quot;, &quot;#f84d39&quot;, &quot;#f84d39&quot;)
+line_color <span style="color:#f92672">=</span> <span style="color:#66d9ef">c</span>(<span style="color:#e6db74">&#39;#fba298&#39;</span>, <span style="color:#e6db74">&#34;#f84d39&#34;</span>, <span style="color:#e6db74">&#34;#f84d39&#34;</span>, <span style="color:#e6db74">&#34;#f84d39&#34;</span>, <span style="color:#e6db74">&#34;#f84d39&#34;</span>, <span style="color:#e6db74">&#34;#f84d39&#34;</span>)
 
-arrow &lt;- tibble(x =    c(230, 245, 127, 130, 173, 185, 82, 50, 44,  25), 
-                xend = c(245, 260, 130, 133, 185, 229, 50, 29, 25,  14), 
-                y =    c(160, 170, 192, 220, 30,  34,  84, 84, 127, 127), 
-                yend = c(170, 170, 220, 224, 34,  34,  84, 50, 127, 148))
+arrow <span style="color:#f92672">&lt;-</span> tibble(x <span style="color:#f92672">=</span>    <span style="color:#66d9ef">c</span>(<span style="color:#ae81ff">230</span>, <span style="color:#ae81ff">245</span>, <span style="color:#ae81ff">127</span>, <span style="color:#ae81ff">130</span>, <span style="color:#ae81ff">173</span>, <span style="color:#ae81ff">185</span>, <span style="color:#ae81ff">82</span>, <span style="color:#ae81ff">50</span>, <span style="color:#ae81ff">44</span>,  <span style="color:#ae81ff">25</span>), 
+                xend <span style="color:#f92672">=</span> <span style="color:#66d9ef">c</span>(<span style="color:#ae81ff">245</span>, <span style="color:#ae81ff">260</span>, <span style="color:#ae81ff">130</span>, <span style="color:#ae81ff">133</span>, <span style="color:#ae81ff">185</span>, <span style="color:#ae81ff">229</span>, <span style="color:#ae81ff">50</span>, <span style="color:#ae81ff">29</span>, <span style="color:#ae81ff">25</span>,  <span style="color:#ae81ff">14</span>), 
+                y <span style="color:#f92672">=</span>    <span style="color:#66d9ef">c</span>(<span style="color:#ae81ff">160</span>, <span style="color:#ae81ff">170</span>, <span style="color:#ae81ff">192</span>, <span style="color:#ae81ff">220</span>, <span style="color:#ae81ff">30</span>,  <span style="color:#ae81ff">34</span>,  <span style="color:#ae81ff">84</span>, <span style="color:#ae81ff">84</span>, <span style="color:#ae81ff">127</span>, <span style="color:#ae81ff">127</span>), 
+                yend <span style="color:#f92672">=</span> <span style="color:#66d9ef">c</span>(<span style="color:#ae81ff">170</span>, <span style="color:#ae81ff">170</span>, <span style="color:#ae81ff">220</span>, <span style="color:#ae81ff">224</span>, <span style="color:#ae81ff">34</span>,  <span style="color:#ae81ff">34</span>,  <span style="color:#ae81ff">84</span>, <span style="color:#ae81ff">50</span>, <span style="color:#ae81ff">127</span>, <span style="color:#ae81ff">148</span>))
 
-p1 &lt;- ggplot(spatial_data_df, aes(lng, lat + 6*(value/max(value, na.rm=TRUE)))) +
-  geom_line(size = 0.35,
-            alpha=0.6,
-            aes(group = lat, color = factor(city)),
-            na.rm=TRUE) +
-  ggthemes::theme_map(base_family = &quot;Overpass Mono&quot;) +
+p1 <span style="color:#f92672">&lt;-</span> ggplot(spatial_data_df, aes(lng, lat <span style="color:#f92672">+</span> <span style="color:#ae81ff">6</span><span style="color:#f92672">*</span>(value<span style="color:#f92672">/</span><span style="color:#66d9ef">max</span>(value, na.rm<span style="color:#f92672">=</span><span style="color:#66d9ef">TRUE</span>)))) <span style="color:#f92672">+</span>
+  geom_line(size <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.35</span>,
+            alpha<span style="color:#f92672">=</span><span style="color:#ae81ff">0.6</span>,
+            aes(group <span style="color:#f92672">=</span> lat, color <span style="color:#f92672">=</span> <span style="color:#66d9ef">factor</span>(city)),
+            na.rm<span style="color:#f92672">=</span><span style="color:#66d9ef">TRUE</span>) <span style="color:#f92672">+</span>
+  ggthemes<span style="color:#f92672">::</span>theme_map(base_family <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Overpass Mono&#34;</span>) <span style="color:#f92672">+</span>
   labs(
-    title = 'Day: {frame_time}',
-    subtitle = &quot;Shown is the number of new confirmed COVID-19 cases for each day since March, 2020.&quot;,
-    caption = &quot;Visualization by Marco Sciaini • Data by RKI&quot;
-  ) +
-  transition_time(date) +
-  shadow_wake(wake_length = 0.1, colour = '#5A3E37')  +
-  theme(plot.background = element_rect(fill = &quot;#e6eaeb&quot;, &quot;#e6eaeb&quot;),
-        plot.title = element_text(size = 16), 
-        plot.subtitle = element_text(size = 12)) +
-  scale_color_manual(values = line_color, guide = &quot;none&quot;) +
-  geom_segment(data = arrow, 
-               aes(x = x, xend = xend, y = y, yend = yend),
-               size = 0.1,
-               alpha = 0.7) +
-  annotate(&quot;text&quot;, x = 270, y = 170, label = &quot;Berlin&quot;, size = 2.7, family = &quot;Overpass Mono&quot;) +
-  annotate(&quot;text&quot;, x = 240, y = 34, label = &quot;Munich&quot;, size = 2.7, family = &quot;Overpass Mono&quot;) +
-  annotate(&quot;text&quot;, x = 30, y = 48, label = &quot;Frankfurt&quot;, size = 2.7, family = &quot;Overpass Mono&quot;) +
-  annotate(&quot;text&quot;, x = 15, y = 150, label = &quot;Dortmund&quot;, size = 2.7, family = &quot;Overpass Mono&quot;) +
-  annotate(&quot;text&quot;, x = 144, y = 225, label = &quot;Hamburg&quot;, size = 2.7, family = &quot;Overpass Mono&quot;)
+    title <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;Day: {frame_time}&#39;</span>,
+    subtitle <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Shown is the number of new confirmed COVID-19 cases for each day since March, 2020.&#34;</span>,
+    caption <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Visualization by Marco Sciaini • Data by RKI&#34;</span>
+  ) <span style="color:#f92672">+</span>
+  transition_time(<span style="color:#66d9ef">date</span>) <span style="color:#f92672">+</span>
+  shadow_wake(wake_length <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.1</span>, colour <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;#5A3E37&#39;</span>)  <span style="color:#f92672">+</span>
+  theme(plot.background <span style="color:#f92672">=</span> element_rect(fill <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;#e6eaeb&#34;</span>, <span style="color:#e6db74">&#34;#e6eaeb&#34;</span>),
+        plot.title <span style="color:#f92672">=</span> element_text(size <span style="color:#f92672">=</span> <span style="color:#ae81ff">16</span>), 
+        plot.subtitle <span style="color:#f92672">=</span> element_text(size <span style="color:#f92672">=</span> <span style="color:#ae81ff">12</span>)) <span style="color:#f92672">+</span>
+  scale_color_manual(values <span style="color:#f92672">=</span> line_color, guide <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;none&#34;</span>) <span style="color:#f92672">+</span>
+  geom_segment(data <span style="color:#f92672">=</span> arrow, 
+               aes(x <span style="color:#f92672">=</span> x, xend <span style="color:#f92672">=</span> xend, y <span style="color:#f92672">=</span> y, yend <span style="color:#f92672">=</span> yend),
+               size <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.1</span>,
+               alpha <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.7</span>) <span style="color:#f92672">+</span>
+  annotate(<span style="color:#e6db74">&#34;text&#34;</span>, x <span style="color:#f92672">=</span> <span style="color:#ae81ff">270</span>, y <span style="color:#f92672">=</span> <span style="color:#ae81ff">170</span>, label <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Berlin&#34;</span>, size <span style="color:#f92672">=</span> <span style="color:#ae81ff">2.7</span>, family <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Overpass Mono&#34;</span>) <span style="color:#f92672">+</span>
+  annotate(<span style="color:#e6db74">&#34;text&#34;</span>, x <span style="color:#f92672">=</span> <span style="color:#ae81ff">240</span>, y <span style="color:#f92672">=</span> <span style="color:#ae81ff">34</span>, label <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Munich&#34;</span>, size <span style="color:#f92672">=</span> <span style="color:#ae81ff">2.7</span>, family <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Overpass Mono&#34;</span>) <span style="color:#f92672">+</span>
+  annotate(<span style="color:#e6db74">&#34;text&#34;</span>, x <span style="color:#f92672">=</span> <span style="color:#ae81ff">30</span>, y <span style="color:#f92672">=</span> <span style="color:#ae81ff">48</span>, label <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Frankfurt&#34;</span>, size <span style="color:#f92672">=</span> <span style="color:#ae81ff">2.7</span>, family <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Overpass Mono&#34;</span>) <span style="color:#f92672">+</span>
+  annotate(<span style="color:#e6db74">&#34;text&#34;</span>, x <span style="color:#f92672">=</span> <span style="color:#ae81ff">15</span>, y <span style="color:#f92672">=</span> <span style="color:#ae81ff">150</span>, label <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Dortmund&#34;</span>, size <span style="color:#f92672">=</span> <span style="color:#ae81ff">2.7</span>, family <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Overpass Mono&#34;</span>) <span style="color:#f92672">+</span>
+  annotate(<span style="color:#e6db74">&#34;text&#34;</span>, x <span style="color:#f92672">=</span> <span style="color:#ae81ff">144</span>, y <span style="color:#f92672">=</span> <span style="color:#ae81ff">225</span>, label <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Hamburg&#34;</span>, size <span style="color:#f92672">=</span> <span style="color:#ae81ff">2.7</span>, family <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Overpass Mono&#34;</span>)
 
-gganimate::animate(p1,
-                   render = gifski_renderer(),
-                   nframes = length(unique(spatial_data_df$date)),
-                   width= 3458,
-                   height= 3858,
-                   duration = 15,
-                   res = 300)
+gganimate<span style="color:#f92672">::</span>animate(p1,
+                   render <span style="color:#f92672">=</span> gifski_renderer(),
+                   nframes <span style="color:#f92672">=</span> <span style="color:#66d9ef">length</span>(<span style="color:#66d9ef">unique</span>(spatial_data_df<span style="color:#f92672">$</span><span style="color:#66d9ef">date</span>)),
+                   width<span style="color:#f92672">=</span> <span style="color:#ae81ff">3458</span>,
+                   height<span style="color:#f92672">=</span> <span style="color:#ae81ff">3858</span>,
+                   duration <span style="color:#f92672">=</span> <span style="color:#ae81ff">15</span>,
+                   res <span style="color:#f92672">=</span> <span style="color:#ae81ff">300</span>)
 
-anim_save(&quot;covidlines.gif&quot;)
+anim_save(<span style="color:#e6db74">&#34;covidlines.gif&#34;</span>)
 
 
-# plot a single day ----
-id_date = &quot;2020-10-05&quot;
+<span style="color:#75715e"># plot a single day ----</span>
+id_date <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;2020-10-05&#34;</span>
 
-spatial_data_df %&gt;% 
-  filter(date == as.Date(id_date)) %&gt;% 
-  ggplot(aes(lng, lat + 25*(value/max(value, na.rm = TRUE)))) +
-  geom_line(size = 0.35,
-            alpha=0.6,
-            aes(group = lat, color = factor(city)),
-            na.rm=TRUE) +
-  ggthemes::theme_map(base_family = &quot;Overpass Mono&quot;) +
+spatial_data_df <span style="color:#f92672">%&gt;%</span> 
+  filter(date <span style="color:#f92672">==</span> <span style="color:#66d9ef">as.Date</span>(id_date)) <span style="color:#f92672">%&gt;%</span> 
+  ggplot(aes(lng, lat <span style="color:#f92672">+</span> <span style="color:#ae81ff">25</span><span style="color:#f92672">*</span>(value<span style="color:#f92672">/</span><span style="color:#66d9ef">max</span>(value, na.rm <span style="color:#f92672">=</span> <span style="color:#66d9ef">TRUE</span>)))) <span style="color:#f92672">+</span>
+  geom_line(size <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.35</span>,
+            alpha<span style="color:#f92672">=</span><span style="color:#ae81ff">0.6</span>,
+            aes(group <span style="color:#f92672">=</span> lat, color <span style="color:#f92672">=</span> <span style="color:#66d9ef">factor</span>(city)),
+            na.rm<span style="color:#f92672">=</span><span style="color:#66d9ef">TRUE</span>) <span style="color:#f92672">+</span>
+  ggthemes<span style="color:#f92672">::</span>theme_map(base_family <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Overpass Mono&#34;</span>) <span style="color:#f92672">+</span>
   labs(
-    title = paste(&quot;Day:&quot;, id_date), 
-    subtitle = &quot;Shown is the number of new confirmed COVID-19 as latitudinal density.&quot;,
-    caption = &quot;Visualization by Marco Sciaini • Data by RKI&quot;
-  ) +
-  theme(plot.background = element_rect(fill = &quot;#e6eaeb&quot;, &quot;#e6eaeb&quot;)) +
-  scale_color_manual(values = line_color, guide = &quot;none&quot;) +
-  geom_segment(data = arrow, 
-               aes(x = x, xend = xend, y = y, yend = yend),
-               size = 0.1,
-               alpha = 0.7) +
-  annotate(&quot;text&quot;, x = 270, y = 170, label = &quot;Berlin&quot;, size = 2.7, family = &quot;Overpass Mono&quot;) +
-  annotate(&quot;text&quot;, x = 240, y = 34, label = &quot;Munich&quot;, size = 2.7, family = &quot;Overpass Mono&quot;) +
-  annotate(&quot;text&quot;, x = 30, y = 48, label = &quot;Frankfurt&quot;, size = 2.7, family = &quot;Overpass Mono&quot;) +
-  annotate(&quot;text&quot;, x = 15, y = 150, label = &quot;Dortmund&quot;, size = 2.7, family = &quot;Overpass Mono&quot;) +
-  annotate(&quot;text&quot;, x = 144, y = 225, label = &quot;Hamburg&quot;, size = 2.7, family = &quot;Overpass Mono&quot;)
+    title <span style="color:#f92672">=</span> <span style="color:#66d9ef">paste</span>(<span style="color:#e6db74">&#34;Day:&#34;</span>, id_date), 
+    subtitle <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Shown is the number of new confirmed COVID-19 as latitudinal density.&#34;</span>,
+    caption <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Visualization by Marco Sciaini • Data by RKI&#34;</span>
+  ) <span style="color:#f92672">+</span>
+  theme(plot.background <span style="color:#f92672">=</span> element_rect(fill <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;#e6eaeb&#34;</span>, <span style="color:#e6db74">&#34;#e6eaeb&#34;</span>)) <span style="color:#f92672">+</span>
+  scale_color_manual(values <span style="color:#f92672">=</span> line_color, guide <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;none&#34;</span>) <span style="color:#f92672">+</span>
+  geom_segment(data <span style="color:#f92672">=</span> arrow, 
+               aes(x <span style="color:#f92672">=</span> x, xend <span style="color:#f92672">=</span> xend, y <span style="color:#f92672">=</span> y, yend <span style="color:#f92672">=</span> yend),
+               size <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.1</span>,
+               alpha <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.7</span>) <span style="color:#f92672">+</span>
+  annotate(<span style="color:#e6db74">&#34;text&#34;</span>, x <span style="color:#f92672">=</span> <span style="color:#ae81ff">270</span>, y <span style="color:#f92672">=</span> <span style="color:#ae81ff">170</span>, label <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Berlin&#34;</span>, size <span style="color:#f92672">=</span> <span style="color:#ae81ff">2.7</span>, family <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Overpass Mono&#34;</span>) <span style="color:#f92672">+</span>
+  annotate(<span style="color:#e6db74">&#34;text&#34;</span>, x <span style="color:#f92672">=</span> <span style="color:#ae81ff">240</span>, y <span style="color:#f92672">=</span> <span style="color:#ae81ff">34</span>, label <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Munich&#34;</span>, size <span style="color:#f92672">=</span> <span style="color:#ae81ff">2.7</span>, family <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Overpass Mono&#34;</span>) <span style="color:#f92672">+</span>
+  annotate(<span style="color:#e6db74">&#34;text&#34;</span>, x <span style="color:#f92672">=</span> <span style="color:#ae81ff">30</span>, y <span style="color:#f92672">=</span> <span style="color:#ae81ff">48</span>, label <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Frankfurt&#34;</span>, size <span style="color:#f92672">=</span> <span style="color:#ae81ff">2.7</span>, family <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Overpass Mono&#34;</span>) <span style="color:#f92672">+</span>
+  annotate(<span style="color:#e6db74">&#34;text&#34;</span>, x <span style="color:#f92672">=</span> <span style="color:#ae81ff">15</span>, y <span style="color:#f92672">=</span> <span style="color:#ae81ff">150</span>, label <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Dortmund&#34;</span>, size <span style="color:#f92672">=</span> <span style="color:#ae81ff">2.7</span>, family <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Overpass Mono&#34;</span>) <span style="color:#f92672">+</span>
+  annotate(<span style="color:#e6db74">&#34;text&#34;</span>, x <span style="color:#f92672">=</span> <span style="color:#ae81ff">144</span>, y <span style="color:#f92672">=</span> <span style="color:#ae81ff">225</span>, label <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Hamburg&#34;</span>, size <span style="color:#f92672">=</span> <span style="color:#ae81ff">2.7</span>, family <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Overpass Mono&#34;</span>)
 
-ggsave(&quot;covidlines.png&quot;, width = 6.58, height = 8.58)
-</code></pre>
-
+ggsave(<span style="color:#e6db74">&#34;covidlines.png&#34;</span>, width <span style="color:#f92672">=</span> <span style="color:#ae81ff">6.58</span>, height <span style="color:#f92672">=</span> <span style="color:#ae81ff">8.58</span>)</code></pre></div>
     </div>
   </article>
 
