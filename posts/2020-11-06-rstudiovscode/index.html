@@ -12,9 +12,10 @@
 <meta property="og:description" content="RStudio RStudio1 is (most likely, are there any numbers out there?) the most widespread IDE for R. However, getting more and more submerged into the R shiny world there was always a bit of a hassle toying around with R, HTML, CSS and Javascript.
 I was using VisualStudio Code for my blog and Jupyter notebooks and recently saw a tweet from Miles McBain explaining how he integrated RStudio Addins in VSCode." />
 <meta property="og:type" content="article" />
-<meta property="og:url" content="https://marcosci.github.io/posts/2020-11-06-rstudiovscode/" />
+<meta property="og:url" content="https://marcosci.github.io/posts/2020-11-06-rstudiovscode/" /><meta property="article:section" content="posts" />
 <meta property="article:published_time" content="2020-11-30T09:00:00+00:00" />
 <meta property="article:modified_time" content="2020-11-30T09:00:00+00:00" />
+
 
   <meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="VS Code and R"/>
@@ -158,20 +159,18 @@ I was using VisualStudio Code for my blog and Jupyter notebooks and recently saw
     </div>
     <div id="toc">
       <nav id="TableOfContents">
-<ul>
-<li>
-<ul>
-<li><a href="#rstudio">RStudio</a></li>
-<li><a href="#why-would-i-use-vscode">Why would I use VSCode?</a></li>
-<li><a href="#setup">Setup</a>
-<ul>
-<li><a href="#minimal-setup">Minimal setup</a></li>
-<li><a href="#my-setup">My setup</a></li>
-</ul></li>
-<li><a href="#things-that-are-missing">Things that are missing</a></li>
-<li><a href="#conclusion">Conclusion</a></li>
-</ul></li>
-</ul>
+  <ul>
+    <li><a href="#rstudio">RStudio</a></li>
+    <li><a href="#why-would-i-use-vscode">Why would I use VSCode?</a></li>
+    <li><a href="#setup">Setup</a>
+      <ul>
+        <li><a href="#minimal-setup">Minimal setup</a></li>
+        <li><a href="#my-setup">My setup</a></li>
+      </ul>
+    </li>
+    <li><a href="#things-that-are-missing">Things that are missing</a></li>
+    <li><a href="#conclusion">Conclusion</a></li>
+  </ul>
 </nav>
     </div>
   </span>
@@ -219,81 +218,59 @@ I was using VisualStudio Code for my blog and Jupyter notebooks and recently saw
 
   
     <div class="content" itemprop="articleBody">
-      
-
-<h2 id="rstudio">RStudio</h2>
-
-<p><strong>RStudio</strong><sup class="footnote-ref" id="fnref:1"><a href="#fn:1">1</a></sup> is (most likely, are there any numbers out there?) the most widespread IDE for R. However, getting more and more submerged into the R shiny world there was always a bit of a hassle toying around with R, HTML, CSS and Javascript.</p>
-
+      <h2 id="rstudio">RStudio</h2>
+<p><strong>RStudio</strong><sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup> is (most likely, are there any numbers out there?) the most widespread IDE for R. However, getting more and more submerged into the R shiny world there was always a bit of a hassle toying around with R, HTML, CSS and Javascript.</p>
 <p>I was using VisualStudio Code for my blog and Jupyter notebooks and recently saw a tweet from Miles McBain explaining how <a href="https://milesmcbain.xyz/posts/adding-addins-to-vscode/">he integrated RStudio Addins in VSCode</a>. This sparked my interest in completely ditching RStudio for my workflow and use VSCode as a single IDE for everything.</p>
-
 <h2 id="why-would-i-use-vscode">Why would I use VSCode?</h2>
-
 <ol>
 <li>VSCode supports basically every programming languages.</li>
 <li>Like R itself, it comes with a vast package library supporting most features you could possibly want</li>
 <li>It is a smaller footprint in your system and feels a hinch more agile than RStudio - developing a shiny app and firing <code>runApp()</code> feels like a breeze</li>
 <li>Live share. A dead simple way to collaboratively work on projects. It automagically lets you do real-time pair programming and even share your console and localhost.</li>
 </ol>
-
 <h2 id="setup">Setup</h2>
-
 <h3 id="minimal-setup">Minimal setup</h3>
-
 <p>The minimal software you need to work with R in VSCode is:</p>
-
 <ol>
 <li>Plain obviously, <a href="https://code.visualstudio.com/">VSCode</a>.</li>
 <li><a href="https://marketplace.visualstudio.com/items?itemName=Ikuyadeu.r">VSCode R Extension</a> + <a href="https://github.com/REditorSupport/languageserver">languageserver</a> by Yuki Ueda.
-
 <ul>
 <li>Brings all the R magic into play. Interactive help for R functions, run selected lines, Syntax highlighting, dataframe and environment viewer, shortcuts for basically everything one needs.</li>
-</ul></li>
+</ul>
+</li>
 </ol>
-
 <p>Installation guides can be found here:</p>
-
 <ul>
 <li><a href="https://github.com/Ikuyadeu/vscode-R/wiki/Installation:-Linux">Installation: Linux</a></li>
 <li><a href="https://github.com/Ikuyadeu/vscode-R/wiki/Installation:-macOS">Installation: macOS</a></li>
 <li><a href="https://github.com/Ikuyadeu/vscode-R/wiki/Installation:-Windows">Installation: Windows</a></li>
 </ul>
-
 <h3 id="my-setup">My setup</h3>
-
 <p>Since I occasionally also work with a couple of other programming languages I installed a plethora of packages to support them. Furthermore - I really like the look and feel of the themes that the community of VSCode provides. Currently, I am really into Synthwave &lsquo;84.</p>
-
 <p>My complete setup:</p>
-
 <ul>
 <li><a href="https://gist.github.com/marcosci/b6afe08d9bf474a003a6d87fd9b6b255">https://gist.github.com/marcosci/b6afe08d9bf474a003a6d87fd9b6b255</a></li>
 </ul>
-
 <p>If you want to have a quick start, just install the Settings Sync package in VSCode and enable downloading settings from a public Gist (<a href="https://dev.to/shanalikhan/how-to-share-your-visual-studio-code-settings-and-extensions-39k">see Details here</a>).</p>
-
 <h2 id="things-that-are-missing">Things that are missing</h2>
-
 <ul>
 <li><del>Autocompletion for columns/variables in dataframes/lists etc.</del>
-
 <ul>
 <li>Turns out &hellip; this is possible! Just turn on <code>r.sessionWatcher</code> in your VSCode settings and enjoy!</li>
-</ul></li>
+</ul>
+</li>
 <li>On Mac, since you have to open Quartz for plotting, the plotting process seems to be quite slow. There may be something I am not familiar with that fixes this, but haven&rsquo;t found a solution so far.</li>
 </ul>
-
 <h2 id="conclusion">Conclusion</h2>
-
 <p>VSCode feels a bit like an IDE on Steroid, if you are only used to RStudio. Both in capabilities, as in speed. I really like working with it, since I rarely use the things I noticed that are missing in comparison to RStudio.</p>
-<div class="footnotes">
-
-<hr />
-
+<section class="footnotes" role="doc-endnotes">
+<hr>
 <ol>
-<li id="fn:1"><a href="https://rstudio.com/">https://rstudio.com/</a>
- <a class="footnote-return" href="#fnref:1"><sup>[return]</sup></a></li>
+<li id="fn:1" role="doc-endnote">
+<p><a href="https://rstudio.com/">https://rstudio.com/</a>&#160;<a href="#fnref:1" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
 </ol>
-</div>
+</section>
 
     </div>
   </article>
@@ -322,20 +299,18 @@ I was using VisualStudio Code for my blog and Jupyter notebooks and recently saw
 
     <div id="toc-footer" style="display: none">
       <nav id="TableOfContents">
-<ul>
-<li>
-<ul>
-<li><a href="#rstudio">RStudio</a></li>
-<li><a href="#why-would-i-use-vscode">Why would I use VSCode?</a></li>
-<li><a href="#setup">Setup</a>
-<ul>
-<li><a href="#minimal-setup">Minimal setup</a></li>
-<li><a href="#my-setup">My setup</a></li>
-</ul></li>
-<li><a href="#things-that-are-missing">Things that are missing</a></li>
-<li><a href="#conclusion">Conclusion</a></li>
-</ul></li>
-</ul>
+  <ul>
+    <li><a href="#rstudio">RStudio</a></li>
+    <li><a href="#why-would-i-use-vscode">Why would I use VSCode?</a></li>
+    <li><a href="#setup">Setup</a>
+      <ul>
+        <li><a href="#minimal-setup">Minimal setup</a></li>
+        <li><a href="#my-setup">My setup</a></li>
+      </ul>
+    </li>
+    <li><a href="#things-that-are-missing">Things that are missing</a></li>
+    <li><a href="#conclusion">Conclusion</a></li>
+  </ul>
 </nav>
     </div>
 
@@ -424,7 +399,7 @@ I was using VisualStudio Code for my blog and Jupyter notebooks and recently saw
 
   <footer id="footer">
   <div class="footer-left">
-    Copyright  &copy; 2020  Marco Sciaini 
+    Copyright  &copy; 2021  Marco Sciaini 
   </div>
   <div class="footer-right">
     <nav>

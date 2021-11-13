@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Tags on Marco Sciaini</title>
@@ -7,17 +7,31 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Marco Sciaini</copyright>
-    <lastBuildDate>Mon, 30 Nov 2020 09:00:00 +0000</lastBuildDate>
-    
-	<atom:link href="https://marcosci.github.io/tags/index.xml" rel="self" type="application/rss+xml" />
-    
-    
+    <lastBuildDate>Sat, 13 Nov 2021 09:00:00 +0000</lastBuildDate><atom:link href="https://marcosci.github.io/tags/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>dotfiles</title>
       <link>https://marcosci.github.io/tags/dotfiles/</link>
-      <pubDate>Mon, 30 Nov 2020 09:00:00 +0000</pubDate>
+      <pubDate>Sat, 13 Nov 2021 09:00:00 +0000</pubDate>
       
       <guid>https://marcosci.github.io/tags/dotfiles/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>R</title>
+      <link>https://marcosci.github.io/tags/r/</link>
+      <pubDate>Sat, 13 Nov 2021 09:00:00 +0000</pubDate>
+      
+      <guid>https://marcosci.github.io/tags/r/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>sf</title>
+      <link>https://marcosci.github.io/tags/sf/</link>
+      <pubDate>Sat, 13 Nov 2021 09:00:00 +0000</pubDate>
+      
+      <guid>https://marcosci.github.io/tags/sf/</guid>
       <description></description>
     </item>
     
@@ -27,15 +41,6 @@
       <pubDate>Mon, 30 Nov 2020 09:00:00 +0000</pubDate>
       
       <guid>https://marcosci.github.io/tags/geospatial/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>R</title>
-      <link>https://marcosci.github.io/tags/r/</link>
-      <pubDate>Mon, 30 Nov 2020 09:00:00 +0000</pubDate>
-      
-      <guid>https://marcosci.github.io/tags/r/</guid>
       <description></description>
     </item>
     

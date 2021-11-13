@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>R on Marco Sciaini</title>
@@ -7,10 +7,15 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Marco Sciaini</copyright>
-    <lastBuildDate>Mon, 30 Nov 2020 09:00:00 +0000</lastBuildDate>
-    
-	<atom:link href="https://marcosci.github.io/tags/r/index.xml" rel="self" type="application/rss+xml" />
-    
+    <lastBuildDate>Sat, 13 Nov 2021 09:00:00 +0000</lastBuildDate><atom:link href="https://marcosci.github.io/tags/r/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Serving tiles on Heroku</title>
+      <link>https://marcosci.github.io/posts/2021-11-09-tileserverheroku/</link>
+      <pubDate>Sat, 13 Nov 2021 09:00:00 +0000</pubDate>
+      
+      <guid>https://marcosci.github.io/posts/2021-11-09-tileserverheroku/</guid>
+      <description>Background So, spatial data is sometimes a pain. It&amp;rsquo;s messy, there are a quadrillion file formats and &amp;hellip; it&amp;rsquo;s huge. It is often really, really big. Like &amp;hellip; terrabytes big. But even if it&amp;rsquo;s smaller, it is in most cases way to big to use it in web applications. To circumvent this, you can use tools like mapbox and upload your data to their platform and let it be served via the web from there.</description>
+    </item>
     
     <item>
       <title>Spatial density latitudinal lines for COVID-19</title>
