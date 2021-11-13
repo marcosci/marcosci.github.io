@@ -5,10 +5,10 @@
     <loc>https://marcosci.github.io/categories/</loc>
     <lastmod>2021-11-13T09:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://marcosci.github.io/tags/dotfiles/</loc>
+    <loc>https://marcosci.github.io/</loc>
     <lastmod>2021-11-13T09:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://marcosci.github.io/</loc>
+    <loc>https://marcosci.github.io/tags/naturalearth/</loc>
     <lastmod>2021-11-13T09:00:00+00:00</lastmod>
   </url><url>
     <loc>https://marcosci.github.io/categories/notes/</loc>
@@ -17,19 +17,22 @@
     <loc>https://marcosci.github.io/posts/</loc>
     <lastmod>2021-11-13T09:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://marcosci.github.io/tags/r/</loc>
-    <lastmod>2021-11-13T09:00:00+00:00</lastmod>
-  </url><url>
     <loc>https://marcosci.github.io/posts/2021-11-09-tileserverheroku/</loc>
-    <lastmod>2021-11-13T09:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://marcosci.github.io/tags/sf/</loc>
     <lastmod>2021-11-13T09:00:00+00:00</lastmod>
   </url><url>
     <loc>https://marcosci.github.io/tags/</loc>
     <lastmod>2021-11-13T09:00:00+00:00</lastmod>
   </url><url>
+    <loc>https://marcosci.github.io/tags/tileserver/</loc>
+    <lastmod>2021-11-13T09:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://marcosci.github.io/tags/dotfiles/</loc>
+    <lastmod>2020-11-30T09:00:00+00:00</lastmod>
+  </url><url>
     <loc>https://marcosci.github.io/tags/geospatial/</loc>
+    <lastmod>2020-11-30T09:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://marcosci.github.io/tags/r/</loc>
     <lastmod>2020-11-30T09:00:00+00:00</lastmod>
   </url><url>
     <loc>https://marcosci.github.io/posts/2020-12-01-latitudinaldensity/</loc>
